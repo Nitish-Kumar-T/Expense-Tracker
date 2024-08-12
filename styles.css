@@ -59,6 +59,10 @@ button:hover {
 
 #filterOptions {
     margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 #expenseList {
@@ -87,3 +91,20 @@ button:hover {
 .category-utilities { background-color: #add8e6; }
 .category-entertainment { background-color: #ffa07a; }
 .category-other { background-color: #d3d3d3; }
+
+#charts {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+#categoryChart, #trendChart {
+    width: 48%;
+    height: 300px;
+}
+
+#exportBtn {
+    display: block;
+    margin: 2rem auto 0;
+    padding: 0.5rem 1rem;
+}

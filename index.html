@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker </title>
+    <title>Expense Tracker</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -23,6 +24,7 @@
                 <option value="entertainment">Entertainment</option>
                 <option value="other">Other</option>
             </select>
+            <input type="date" id="expenseDate" required>
             <button type="submit">Add Expense</button>
         </form>
         <div id="filterOptions">
@@ -35,8 +37,18 @@
                 <option value="entertainment">Entertainment</option>
                 <option value="other">Other</option>
             </select>
+            <label for="startDate">From:</label>
+            <input type="date" id="startDate">
+            <label for="endDate">To:</label>
+            <input type="date" id="endDate">
+            <button id="applyFilter">Apply Filter</button>
         </div>
         <div id="expenseList"></div>
+        <div id="charts">
+            <canvas id="categoryChart"></canvas>
+            <canvas id="trendChart"></canvas>
+        </div>
+        <button id="exportBtn">Export to CSV</button>
     </main>
     <script src="script.js"></script>
 </body>
