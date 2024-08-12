@@ -1,0 +1,34 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+input, button {
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+#expenseList {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #ccc;
+    padding: 10px 0;
+}
