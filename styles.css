@@ -1,34 +1,89 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
-    margin: 0;
     padding: 20px;
+    background-color: #f4f4f4;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1rem;
+    margin-bottom: 2rem;
 }
 
 h1 {
-    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 form {
     display: flex;
     flex-direction: column;
-    max-width: 300px;
-    margin: 0 auto;
+    max-width: 400px;
+    margin: 0 auto 2rem;
 }
 
-input, button {
-    margin-bottom: 10px;
-    padding: 5px;
+input, select, button {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+
+button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+#filterOptions {
+    margin-bottom: 1rem;
 }
 
 #expenseList {
-    max-width: 500px;
-    margin: 20px auto;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .expense-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     border-bottom: 1px solid #ccc;
-    padding: 10px 0;
+    padding: 1rem 0;
 }
+
+.category-label {
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.category-food { background-color: #ffd700; }
+.category-transport { background-color: #90ee90; }
+.category-utilities { background-color: #add8e6; }
+.category-entertainment { background-color: #ffa07a; }
+.category-other { background-color: #d3d3d3; }

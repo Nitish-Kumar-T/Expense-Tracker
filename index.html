@@ -3,18 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker</title>
+    <title>Expense Tracker </title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Expense Tracker</h1>
-    <form id="expenseForm">
-        <input type="text" id="expenseName" placeholder="Expense Name" required>
-        <input type="number" id="expenseAmount" placeholder="Amount" required>
-        <button type="submit">Add Expense</button>
-    </form>
-    <div id="expenseList"></div>
-
+    <header>
+        <h1>Expense Tracker</h1>
+        <div id="totalExpenses">Total: $0.00</div>
+    </header>
+    <main>
+        <form id="expenseForm">
+            <input type="text" id="expenseName" placeholder="Expense Name" required>
+            <input type="number" id="expenseAmount" placeholder="Amount" step="0.01" required>
+            <select id="expenseCategory" required>
+                <option value="">Select Category</option>
+                <option value="food">Food</option>
+                <option value="transport">Transport</option>
+                <option value="utilities">Utilities</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="other">Other</option>
+            </select>
+            <button type="submit">Add Expense</button>
+        </form>
+        <div id="filterOptions">
+            <label for="categoryFilter">Filter by Category:</label>
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
+                <option value="food">Food</option>
+                <option value="transport">Transport</option>
+                <option value="utilities">Utilities</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div id="expenseList"></div>
+    </main>
     <script src="script.js"></script>
 </body>
 </html>
