@@ -3,53 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker</title>
+    <title>Expense Tracker v4</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Expense Tracker</h1>
-        <div id="totalExpenses">Total: $0.00</div>
-    </header>
-    <main>
-        <form id="expenseForm">
-            <input type="text" id="expenseName" placeholder="Expense Name" required>
-            <input type="number" id="expenseAmount" placeholder="Amount" step="0.01" required>
-            <select id="expenseCategory" required>
-                <option value="">Select Category</option>
-                <option value="food">Food</option>
-                <option value="transport">Transport</option>
-                <option value="utilities">Utilities</option>
-                <option value="entertainment">Entertainment</option>
-                <option value="other">Other</option>
-            </select>
-            <input type="date" id="expenseDate" required>
-            <button type="submit">Add Expense</button>
-        </form>
-        <div id="filterOptions">
-            <label for="categoryFilter">Filter by Category:</label>
-            <select id="categoryFilter">
-                <option value="">All Categories</option>
-                <option value="food">Food</option>
-                <option value="transport">Transport</option>
-                <option value="utilities">Utilities</option>
-                <option value="entertainment">Entertainment</option>
-                <option value="other">Other</option>
-            </select>
-            <label for="startDate">From:</label>
-            <input type="date" id="startDate">
-            <label for="endDate">To:</label>
-            <input type="date" id="endDate">
-            <button id="applyFilter">Apply Filter</button>
-        </div>
-        <div id="expenseList"></div>
-        <div id="charts">
-            <canvas id="categoryChart"></canvas>
-            <canvas id="trendChart"></canvas>
-        </div>
-        <button id="exportBtn">Export to CSV</button>
-    </main>
+    <div class="container">
+        <header class="my-4">
+            <h1 class="text-center">Expense Tracker</h1>
+            <div id="totalExpenses" class="text-center fs-4">Total: $0.00</div>
+        </header>
+        <main>
+            <div class="row">
+                <div class="col-md-6">
+                    <form id="expenseForm" class="mb-4">
+                        <input type="text" id="expenseName" class="form-control mb-2" placeholder="Expense Name" required>
+                        <input type="number" id="expenseAmount" class="form-control mb-2" placeholder="Amount" step="0.01" required>
+                        <select id="expenseCategory" class="form-select mb-2" required>
+                            <option value="">Select Category</option>
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input type="date" id="expenseDate" class="form-control mb-2" required>
+                        <button type="submit" class="btn btn-primary">Add Expense</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <div id="filterOptions" class="mb-4">
+                        <h4>Filter Options</h4>
+                        <select id="categoryFilter" class="form-select mb-2">
+                            <option value="">All Categories</option>
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="row">
+                            <div class="col">
+                                <label for="startDate">From:</label>
+                                <input type="date" id="startDate" class="form-control">
+                            </div>
+                            <div class="col">
+                                <label for="endDate">To:</label>
+                                <input type="date" id="endDate" class="form-control">
+                            </div>
+                        </div>
+                        <button id="applyFilter" class="btn btn-secondary mt-2">Apply Filter</button>
+                    </div>
+                </div>
+            </div>
+            <div id="expenseList" class="mb-4"></div>
+            <div id="charts" class="row mb-4">
+                <div class="col-md-6">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            <!-- Addition: Budget section -->
+            <div id="budgetSection" class="mb-4">
+                <h4>Budget</h4>
+                <form id="budgetForm" class="mb-2">
+                    <div class="row">
+                        <div class="col">
+                            <input type="number" id="budgetAmount" class="form-control" placeholder="Budget Amount" required>
+                        </div>
+                        <div class="col">
+                            <button type="submit" class="btn btn-primary">Set Budget</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="budgetInfo"></div>
+            </div>
+            <button id="exportBtn" class="btn btn-success">Export to CSV</button>
+        </main>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

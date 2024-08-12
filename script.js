@@ -6,7 +6,10 @@ const endDateFilter = document.getElementById('endDate');
 const applyFilterBtn = document.getElementById('applyFilter');
 const totalExpensesDisplay = document.getElementById('totalExpenses');
 const exportBtn = document.getElementById('exportBtn');
+const budgetForm = document.getElementById('budgetForm');
+const budgetInfo = document.getElementById('budgetInfo');
 let expenses = [];
+let budget = 0;
 
 expenseForm.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -26,6 +29,7 @@ expenseForm.addEventListener('submit', function(e) {
         updateExpenseList();
         updateTotalExpenses();
         updateCharts();
+        updateBudgetInfo();
         expenseForm.reset();
     }
 });
@@ -46,16 +50,19 @@ function updateExpenseList() {
         })
         .forEach((expense, index) => {
             const item = document.createElement('div');
-            item.classList.add('expense-item');
+            item.classList.add('expense-item', 'mb-2', 'd-flex', 'justify-content-between', 'align-items-center');
             item.innerHTML = `
                 <span>${expense.name}</span>
                 <span class="category-label category-${expense.category}">${expense.category}</span>
                 <span>$${expense.amount.toFixed(2)}</span>
                 <span>${expense.date}</span>
-                <button onclick="deleteExpense(${index})">Delete</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteExpense(${index})">Delete</button>
             `;
             expenseList.appendChild(item);
         });
+    saveExpenses(); 
+    updateCharts();
+    updateBudgetInfo();
 }
 
 function updateTotalExpenses() {
@@ -68,6 +75,7 @@ function deleteExpense(index) {
     updateExpenseList();
     updateTotalExpenses();
     updateCharts();
+    updateBudgetInfo();
     saveExpenses();
 }
 
@@ -151,13 +159,43 @@ exportBtn.addEventListener('click', function() {
     link.click();
 });
 
+budgetForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const budgetAmount = parseFloat(document.getElementById('budgetAmount').value);
+    if (!isNaN(budgetAmount)) {
+        budget = budgetAmount;
+        updateBudgetInfo();
+        saveBudget();
+    }
+});
+
+function updateBudgetInfo() {
+    const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const remaining = budget - total;
+    const percentage = (total / budget) * 100;
+
+    budgetInfo.innerHTML = `
+        <p>Budget: $${budget.toFixed(2)}</p>
+        <p>Remaining: $${remaining.toFixed(2)}</p>
+        <div class="budget-progress">
+            <div class="budget-progress-bar bg-${percentage > 100 ? 'danger' : 'success'}" 
+                 style="width: ${Math.min(percentage, 100)}%"></div>
+        </div>
+    `;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const savedExpenses = localStorage.getItem('expenses');
+    const savedBudget = localStorage.getItem('budget');
     if (savedExpenses) {
         expenses = JSON.parse(savedExpenses);
         updateExpenseList();
         updateTotalExpenses();
         updateCharts();
+    }
+    if (savedBudget) {
+        budget = parseFloat(savedBudget);
+        updateBudgetInfo();
     }
 });
 
@@ -165,31 +203,6 @@ function saveExpenses() {
     localStorage.setItem('expenses', JSON.stringify(expenses));
 }
 
-function updateExpenseList() {
-    const selectedCategory = categoryFilter.value;
-    expenseList.innerHTML = '';
-    expenses
-        .filter(expense => selectedCategory === '' || expense.category === selectedCategory)
-        .forEach((expense, index) => {
-            const item = document.createElement('div');
-            item.classList.add('expense-item');
-            item.innerHTML = `
-                <span>${expense.name}</span>
-                <span class="category-label category-${expense.category}">${expense.category}</span>
-                <span>$${expense.amount.toFixed(2)}</span>
-                <span>${new Date(expense.date).toLocaleDateString()}</span>
-                <button onclick="deleteExpense(${index})">Delete</button>
-            `;
-            expenseList.appendChild(item);
-        });
-    saveExpenses();
-    updateCharts();
-}
-
-function deleteExpense(index) {
-    expenses.splice(index, 1);
-    updateExpenseList();
-    updateTotalExpenses();
-    saveExpenses();
-    updateCharts();
+function saveBudget() {
+    localStorage.setItem('budget', budget.toString());
 }
