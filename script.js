@@ -9,64 +9,57 @@ const budgetForm = document.getElementById('budgetForm');
 const budgetInfo = document.getElementById('budgetInfo');
 const recurringExpenseForm = document.getElementById('recurringExpenseForm');
 const recurringExpensesList = document.getElementById('recurringExpensesList');
-const categoryForm = document.getElementById('categoryForm');
-const categoryList = document.getElementById('categoryList');
-const backupBtn = document.getElementById('backupBtn');
-const restoreInput = document.getElementById('restoreInput');
-const currencySelect = document.getElementById('currencySelect');
+const preferredCurrencySelect = document.getElementById('preferredCurrency');
 
 let expenses = [];
 let recurringExpenses = [];
-let budget = 0;
-let categories = ['food', 'transport', 'utilities', 'entertainment', 'other'];
+let budget = { amount: 0, currency: 'USD' };
+let preferredCurrency = 'USD';
+
 const currencies = {
     USD: { symbol: '$', rate: 0.012 },
     EUR: { symbol: '€', rate: 0.011 },
     GBP: { symbol: '£', rate: 0.0093 },
     INR: { symbol: '₹', rate: 1 }
 };
-let selectedCurrency = 'INR'; 
 
-flatpickr("#expenseDate", {
-    dateFormat: "Y-m-d",
-    defaultDate: "today"
-});
+flatpickr("#expenseDate", { dateFormat: "Y-m-d", defaultDate: "today" });
+flatpickr("#dateRangeFilter", { mode: "range", dateFormat: "Y-m-d" });
 
-flatpickr("#dateRangeFilter", {
-    mode: "range",
-    dateFormat: "Y-m-d"
-});
+function convertCurrency(amount, fromCurrency, toCurrency) {
+    return (amount / currencies[fromCurrency].rate) * currencies[toCurrency].rate;
+}
 
-function formatCurrency(amount) {
-    return currencies[selectedCurrency].symbol + amount.toFixed(2);
+function setPreferredCurrency(currency) {
+    preferredCurrency = currency;
+    localStorage.setItem('preferredCurrency', currency);
+    updateExpenseList();
+    updateTotalExpenses();
+    updateCharts();
+    updateBudgetInfo();
 }
 
 expenseForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const name = document.getElementById('expenseName').value;
-    const amount = document.getElementById('expenseAmount').value;
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
     const category = document.getElementById('expenseCategory').value;
     const date = document.getElementById('expenseDate').value;
+    const currency = document.getElementById('expenseCurrency').value;
+    const tags = document.getElementById('expenseTags').value.split(',').map(tag => tag.trim());
     
-    if (name && amount && category && date) {
-        const expense = { 
-            name, 
-            amount: parseFloat(amount) * currencies[selectedCurrency].rate, 
-            category,
-            date,
-            currency: selectedCurrency
-        };
+    if (name && amount && category && date && currency) {
+        const expense = { name, amount, category, date, currency, tags };
         expenses.push(expense);
         updateExpenseList();
         updateTotalExpenses();
         updateCharts();
         updateBudgetInfo();
+        saveExpenses();
         expenseForm.reset();
         flatpickr("#expenseDate").setDate("today");
     }
 });
-
-applyFilterBtn.addEventListener('click', updateExpenseList);
 
 function updateExpenseList() {
     const selectedCategory = categoryFilter.value;
@@ -82,13 +75,16 @@ function updateExpenseList() {
                    (!endDate || expense.date <= endDate);
         })
         .forEach((expense, index) => {
+            const convertedAmount = convertCurrency(expense.amount, expense.currency, preferredCurrency);
             const item = document.createElement('div');
             item.classList.add('expense-item', 'mb-2', 'd-flex', 'justify-content-between', 'align-items-center');
             item.innerHTML = `
                 <span>${expense.name}</span>
                 <span class="category-label category-${expense.category}">${expense.category}</span>
-                <span>${formatCurrency(expense.amount / currencies[expense.currency].rate)}</span>
+                <span>${currencies[expense.currency].symbol}${expense.amount.toFixed(2)}</span>
+                <span>(${currencies[preferredCurrency].symbol}${convertedAmount.toFixed(2)})</span>
                 <span>${expense.date}</span>
+                <span>${expense.tags.join(', ')}</span>
                 <button class="btn btn-danger btn-sm" onclick="deleteExpense(${index})">Delete</button>
             `;
             expenseList.appendChild(item);
@@ -96,8 +92,10 @@ function updateExpenseList() {
 }
 
 function updateTotalExpenses() {
-    const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    totalExpensesDisplay.textContent = `Total: ${formatCurrency(total / currencies[selectedCurrency].rate)}`;
+    const total = expenses.reduce((sum, expense) => {
+        return sum + convertCurrency(expense.amount, expense.currency, preferredCurrency);
+    }, 0);
+    totalExpensesDisplay.textContent = `Total: ${currencies[preferredCurrency].symbol}${total.toFixed(2)}`;
 }
 
 function deleteExpense(index) {
@@ -112,12 +110,14 @@ function deleteExpense(index) {
 function updateCharts() {
     updateCategoryChart();
     updateTrendChart();
+    updateTagChart();
 }
 
 function updateCategoryChart() {
     const ctx = document.getElementById('categoryChart').getContext('2d');
     const categoryTotals = expenses.reduce((totals, expense) => {
-        totals[expense.category] = (totals[expense.category] || 0) + expense.amount;
+        const convertedAmount = convertCurrency(expense.amount, expense.currency, preferredCurrency);
+        totals[expense.category] = (totals[expense.category] || 0) + convertedAmount;
         return totals;
     }, {});
 
@@ -132,10 +132,7 @@ function updateCategoryChart() {
         },
         options: {
             responsive: true,
-            title: {
-                display: true,
-                text: 'Expenses by Category'
-            }
+            title: { display: true, text: 'Expenses by Category' }
         }
     });
 }
@@ -144,7 +141,9 @@ function updateTrendChart() {
     const ctx = document.getElementById('trendChart').getContext('2d');
     const sortedExpenses = expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
     const dates = sortedExpenses.map(expense => expense.date);
-    const amounts = sortedExpenses.map(expense => expense.amount);
+    const amounts = sortedExpenses.map(expense => 
+        convertCurrency(expense.amount, expense.currency, preferredCurrency)
+    );
 
     new Chart(ctx, {
         type: 'line',
@@ -159,17 +158,39 @@ function updateTrendChart() {
         },
         options: {
             responsive: true,
-            title: {
-                display: true,
-                text: 'Expense Trend Over Time'
-            },
+            title: { display: true, text: 'Expense Trend Over Time' },
             scales: {
-                xAxes: [{
-                    type: 'time',
-                    time: {
-                        unit: 'day'
-                    }
-                }]
+                xAxes: [{ type: 'time', time: { unit: 'day' } }]
+            }
+        }
+    });
+}
+
+function updateTagChart() {
+    const ctx = document.getElementById('tagChart').getContext('2d');
+    const tagTotals = expenses.reduce((totals, expense) => {
+        const convertedAmount = convertCurrency(expense.amount, expense.currency, preferredCurrency);
+        expense.tags.forEach(tag => {
+            totals[tag] = (totals[tag] || 0) + convertedAmount;
+        });
+        return totals;
+    }, {});
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(tagTotals),
+            datasets: [{
+                label: 'Expenses by Tag',
+                data: Object.values(tagTotals),
+                backgroundColor: '#4CAF50'
+            }]
+        },
+        options: {
+            responsive: true,
+            title: { display: true, text: 'Expenses by Tag' },
+            scales: {
+                yAxes: [{ ticks: { beginAtZero: true } }]
             }
         }
     });
@@ -177,9 +198,9 @@ function updateTrendChart() {
 
 exportBtn.addEventListener('click', function() {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Name,Amount,Category,Date,Currency\n";
+    csvContent += "Name,Amount,Currency,Category,Date,Tags\n";
     expenses.forEach(expense => {
-        csvContent += `${expense.name},${expense.amount / currencies[expense.currency].rate},${expense.category},${expense.date},${expense.currency}\n`;
+        csvContent += `${expense.name},${expense.amount},${expense.currency},${expense.category},${expense.date},${expense.tags.join(';')}\n`;
     });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -192,24 +213,30 @@ exportBtn.addEventListener('click', function() {
 budgetForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const budgetAmount = parseFloat(document.getElementById('budgetAmount').value);
+    const budgetCurrency = document.getElementById('budgetCurrency').value;
     if (!isNaN(budgetAmount)) {
-        budget = budgetAmount * currencies[selectedCurrency].rate;
+        budget = { amount: budgetAmount, currency: budgetCurrency };
         updateBudgetInfo();
         saveBudget();
     }
 });
 
 function updateBudgetInfo() {
-    const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const remaining = budget - total;
-    const percentage = (total / budget) * 100;
+    const totalExpenses = expenses.reduce((sum, expense) => {
+        return sum + convertCurrency(expense.amount, expense.currency, budget.currency);
+    }, 0);
+    const remaining = budget.amount - totalExpenses;
+    const percentage = (totalExpenses / budget.amount) * 100;
 
     budgetInfo.innerHTML = `
-        <p>Budget: ${formatCurrency(budget)}</p>
-        <p>Remaining: ${formatCurrency(remaining)}</p>
-        <div class="budget-progress">
-            <div class="budget-progress-bar bg-${percentage > 100 ? 'danger' : 'success'}" 
-                 style="width: ${Math.min(percentage, 100)}%"></div>
+        <p>Budget: ${currencies[budget.currency].symbol}${budget.amount.toFixed(2)}</p>
+        <p>Remaining: ${currencies[budget.currency].symbol}${remaining.toFixed(2)}</p>
+        <div class="progress">
+            <div class="progress-bar ${percentage > 100 ? 'bg-danger' : 'bg-success'}" 
+                 role="progressbar" style="width: ${Math.min(percentage, 100)}%" 
+                 aria-valuenow="${Math.min(percentage, 100)}" aria-valuemin="0" aria-valuemax="100">
+                ${percentage.toFixed(2)}%
+            </div>
         </div>
     `;
 }
@@ -217,11 +244,13 @@ function updateBudgetInfo() {
 recurringExpenseForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const name = document.getElementById('recurringExpenseName').value;
-    const amount = parseFloat(document.getElementById('recurringExpenseAmount').value) * currencies[selectedCurrency].rate;
+    const amount = parseFloat(document.getElementById('recurringExpenseAmount').value);
+    const currency = document.getElementById('recurringExpenseCurrency').value;
+    const category = document.getElementById('recurringExpenseCategory').value;
     const frequency = document.getElementById('recurringExpenseFrequency').value;
 
-    if (name && amount && frequency) {
-        const recurringExpense = { name, amount, frequency, currency: selectedCurrency };
+    if (name && amount && currency && category && frequency) {
+        const recurringExpense = { name, amount, currency, category, frequency };
         recurringExpenses.push(recurringExpense);
         updateRecurringExpensesList();
         saveRecurringExpenses();
@@ -236,7 +265,8 @@ function updateRecurringExpensesList() {
         item.classList.add('recurring-expense-item');
         item.innerHTML = `
             <span>${expense.name}</span>
-            <span>${formatCurrency(expense.amount / currencies[expense.currency].rate)}</span>
+            <span>${currencies[expense.currency].symbol}${expense.amount.toFixed(2)}</span>
+            <span>${expense.category}</span>
             <span>${expense.frequency}</span>
             <button class="btn btn-danger btn-sm" onclick="deleteRecurringExpense(${index})">Delete</button>
         `;
@@ -250,183 +280,79 @@ function deleteRecurringExpense(index) {
     saveRecurringExpenses();
 }
 
+function saveExpenses() {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+}
+
+function saveBudget() {
+    localStorage.setItem('budget', JSON.stringify(budget));
+}
+
 function saveRecurringExpenses() {
     localStorage.setItem('recurringExpenses', JSON.stringify(recurringExpenses));
 }
+
+function loadData() {
+    const savedExpenses = localStorage.getItem('expenses');
+    const savedBudget = localStorage.getItem('budget');
+    const savedRecurringExpenses = localStorage.getItem('recurringExpenses');
+    const savedPreferredCurrency = localStorage.getItem('preferredCurrency');
+
+    if (savedExpenses) expenses = JSON.parse(savedExpenses);
+    if (savedBudget) budget = JSON.parse(savedBudget);
+    if (savedRecurringExpenses) recurringExpenses = JSON.parse(savedRecurringExpenses);
+    if (savedPreferredCurrency) {
+        preferredCurrency = savedPreferredCurrency;
+        preferredCurrencySelect.value = preferredCurrency;
+    }
+
+    updateExpenseList();
+    updateTotalExpenses();
+    updateCharts();
+    updateBudgetInfo();
+    updateRecurringExpensesList();
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+
+preferredCurrencySelect.addEventListener('change', function() {
+    setPreferredCurrency(this.value);
+});
 
 function applyRecurringExpenses() {
     const today = new Date();
     recurringExpenses.forEach(recurringExpense => {
         if (shouldApplyRecurringExpense(recurringExpense, today)) {
             expenses.push({
-                ...recurringExpense,
+                name: recurringExpense.name,
+                amount: recurringExpense.amount,
+                currency: recurringExpense.currency,
+                category: recurringExpense.category,
                 date: today.toISOString().split('T')[0],
-                category: 'recurring'
+                tags: ['recurring']
             });
+            recurringExpense.lastApplied = today.toISOString().split('T')[0];
         }
     });
     updateExpenseList();
     updateTotalExpenses();
     updateCharts();
     updateBudgetInfo();
+    saveExpenses();
+    saveRecurringExpenses();
 }
 
-function shouldApplyRecurringExpense(expense, today) {
-    const lastApplied = new Date(localStorage.getItem(`lastApplied_${expense.name}`) || 0);
-    const nextApplyDate = new Date(lastApplied);
-
-    switch (expense.frequency) {
-        case 'daily':
-            nextApplyDate.setDate(lastApplied.getDate() + 1);
-            break;
-        case 'weekly':
-            nextApplyDate.setDate(lastApplied.getDate() + 7);
-            break;
-        case 'monthly':
-            nextApplyDate.setMonth(lastApplied.getMonth() + 1);
-            break;
+function shouldApplyRecurringExpense(recurringExpense, today) {
+    if (!recurringExpense.lastApplied) return true;
+    const lastApplied = new Date(recurringExpense.lastApplied);
+    const diffDays = Math.floor((today - lastApplied) / (1000 * 60 * 60 * 24));
+    switch (recurringExpense.frequency) {
+        case 'daily': return diffDays >= 1;
+        case 'weekly': return diffDays >= 7;
+        case 'monthly': return today.getMonth() !== lastApplied.getMonth() || today.getFullYear() !== lastApplied.getFullYear();
+        case 'yearly': return today.getFullYear() !== lastApplied.getFullYear();
+        default: return false;
     }
-
-    if (today >= nextApplyDate) {
-        localStorage.setItem(`lastApplied_${expense.name}`, today.toISOString());
-        return true;
-    }
-    return false;
 }
 
-categoryForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const categoryName = document.getElementById('newCategory').value.trim().toLowerCase();
-    if (categoryName && !categories.includes(categoryName)) {
-        categories.push(categoryName);
-        updateCategoryList();
-        updateCategoryFilterOptions();
-        categoryForm.reset();
-    }
-});
-
-function updateCategoryList() {
-    categoryList.innerHTML = '';
-    categories.forEach((category, index) => {
-        const item = document.createElement('div');
-        item.classList.add('category-item');
-        item.innerHTML = `
-            <span>${category}</span>
-            <button class="btn btn-danger btn-sm" onclick="deleteCategory(${index})">Delete</button>
-        `;
-        categoryList.appendChild(item);
-    });
-}
-
-function updateCategoryFilterOptions() {
-    categoryFilter.innerHTML = '<option value="">All Categories</option>';
-    categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-        categoryFilter.appendChild(option);
-    });
-}
-
-function deleteCategory(index) {
-    const categoryToDelete = categories[index];
-    categories.splice(index, 1);
-    expenses = expenses.filter(expense => expense.category !== categoryToDelete);
-    updateExpenseList();
-    updateCategoryList();
-    updateCategoryFilterOptions();
-    updateCharts();
-    saveCategories();
-}
-
-currencySelect.addEventListener('change', function() {
-    selectedCurrency = currencySelect.value;
-    updateExpenseList();
-    updateTotalExpenses();
-    updateBudgetInfo();
-    updateCharts();
-    saveCurrencyPreference();
-});
-
-function saveExpenses() {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-}
-
-function saveBudget() {
-    localStorage.setItem('budget', budget);
-}
-
-function saveCategories() {
-    localStorage.setItem('categories', JSON.stringify(categories));
-}
-
-function saveCurrencyPreference() {
-    localStorage.setItem('selectedCurrency', selectedCurrency);
-}
-
-function loadFromLocalStorage() {
-    const storedExpenses = JSON.parse(localStorage.getItem('expenses')) || [];
-    const storedRecurringExpenses = JSON.parse(localStorage.getItem('recurringExpenses')) || [];
-    const storedBudget = parseFloat(localStorage.getItem('budget')) || 0;
-    const storedCategories = JSON.parse(localStorage.getItem('categories')) || categories;
-    const storedCurrency = localStorage.getItem('selectedCurrency') || 'INR';
-
-    expenses = storedExpenses;
-    recurringExpenses = storedRecurringExpenses;
-    budget = storedBudget;
-    categories = storedCategories;
-    selectedCurrency = storedCurrency;
-
-    currencySelect.value = selectedCurrency;
-    updateExpenseList();
-    updateTotalExpenses();
-    updateRecurringExpensesList();
-    updateBudgetInfo();
-    updateCategoryList();
-    updateCategoryFilterOptions();
-    applyRecurringExpenses();
-    updateCharts();
-}
-
-backupBtn.addEventListener('click', function() {
-    const data = {
-        expenses,
-        recurringExpenses,
-        budget,
-        categories,
-        selectedCurrency
-    };
-    const dataStr = JSON.stringify(data);
-    const encodedUri = encodeURI("data:text/json;charset=utf-8," + dataStr);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "budget_backup.json");
-    document.body.appendChild(link);
-    link.click();
-});
-
-restoreInput.addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = JSON.parse(e.target.result);
-            expenses = data.expenses || [];
-            recurringExpenses = data.recurringExpenses || [];
-            budget = data.budget || 0;
-            categories = data.categories || categories;
-            selectedCurrency = data.selectedCurrency || 'INR';
-
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            localStorage.setItem('recurringExpenses', JSON.stringify(recurringExpenses));
-            localStorage.setItem('budget', budget);
-            localStorage.setItem('categories', JSON.stringify(categories));
-            localStorage.setItem('selectedCurrency', selectedCurrency);
-
-            loadFromLocalStorage();
-        };
-        reader.readAsText(file);
-    }
-});
-
-window.addEventListener('load', loadFromLocalStorage);
+setInterval(applyRecurringExpenses, 24 * 60 * 60 * 1000);
