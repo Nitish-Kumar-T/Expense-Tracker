@@ -20,10 +20,10 @@ let recurringExpenses = [];
 let budget = 0;
 let categories = ['food', 'transport', 'utilities', 'entertainment', 'other'];
 const currencies = {
-    USD: { symbol: '$', rate: 1 },
-    EUR: { symbol: '€', rate: 0.84 },
-    GBP: { symbol: '£', rate: 0.72 },
-    INR: { symbol: '₹', rate: 75.50 }
+    USD: { symbol: '$', rate: 0.012 },
+    EUR: { symbol: '€', rate: 0.011 },
+    GBP: { symbol: '£', rate: 0.0093 },
+    INR: { symbol: '₹', rate: 1 }
 };
 let selectedCurrency = 'INR'; 
 
@@ -260,102 +260,149 @@ function applyRecurringExpenses() {
         if (shouldApplyRecurringExpense(recurringExpense, today)) {
             expenses.push({
                 ...recurringExpense,
-                date: today.toISOString().split('T')[0]
+                date: today.toISOString().split('T')[0],
+                category: 'recurring'
             });
         }
     });
     updateExpenseList();
     updateTotalExpenses();
     updateCharts();
+    updateBudgetInfo();
 }
 
-function shouldApplyRecurringExpense(recurringExpense, today) {
-    // Implement logic to determine if the recurring expense should be applied today
-    // For simplicity, assuming it applies every time the function is called
-    return true;
+function shouldApplyRecurringExpense(expense, today) {
+    const lastApplied = new Date(localStorage.getItem(`lastApplied_${expense.name}`) || 0);
+    const nextApplyDate = new Date(lastApplied);
+
+    switch (expense.frequency) {
+        case 'daily':
+            nextApplyDate.setDate(lastApplied.getDate() + 1);
+            break;
+        case 'weekly':
+            nextApplyDate.setDate(lastApplied.getDate() + 7);
+            break;
+        case 'monthly':
+            nextApplyDate.setMonth(lastApplied.getMonth() + 1);
+            break;
+    }
+
+    if (today >= nextApplyDate) {
+        localStorage.setItem(`lastApplied_${expense.name}`, today.toISOString());
+        return true;
+    }
+    return false;
 }
 
 categoryForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    const newCategory = document.getElementById('newCategory').value;
-    if (newCategory && !categories.includes(newCategory)) {
-        categories.push(newCategory);
-        updateCategoryFilter();
-        saveCategories();
+    const categoryName = document.getElementById('newCategory').value.trim().toLowerCase();
+    if (categoryName && !categories.includes(categoryName)) {
+        categories.push(categoryName);
+        updateCategoryList();
+        updateCategoryFilterOptions();
         categoryForm.reset();
     }
 });
 
-function updateCategoryFilter() {
-    categoryFilter.innerHTML = '<option value="">All</option>';
+function updateCategoryList() {
+    categoryList.innerHTML = '';
+    categories.forEach((category, index) => {
+        const item = document.createElement('div');
+        item.classList.add('category-item');
+        item.innerHTML = `
+            <span>${category}</span>
+            <button class="btn btn-danger btn-sm" onclick="deleteCategory(${index})">Delete</button>
+        `;
+        categoryList.appendChild(item);
+    });
+}
+
+function updateCategoryFilterOptions() {
+    categoryFilter.innerHTML = '<option value="">All Categories</option>';
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
-        option.textContent = category;
+        option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
         categoryFilter.appendChild(option);
     });
 }
 
-function saveCategories() {
-    localStorage.setItem('categories', JSON.stringify(categories));
+function deleteCategory(index) {
+    const categoryToDelete = categories[index];
+    categories.splice(index, 1);
+    expenses = expenses.filter(expense => expense.category !== categoryToDelete);
+    updateExpenseList();
+    updateCategoryList();
+    updateCategoryFilterOptions();
+    updateCharts();
+    saveCategories();
 }
+
+currencySelect.addEventListener('change', function() {
+    selectedCurrency = currencySelect.value;
+    updateExpenseList();
+    updateTotalExpenses();
+    updateBudgetInfo();
+    updateCharts();
+    saveCurrencyPreference();
+});
 
 function saveExpenses() {
     localStorage.setItem('expenses', JSON.stringify(expenses));
-}
-
-function loadExpenses() {
-    const savedExpenses = localStorage.getItem('expenses');
-    if (savedExpenses) {
-        expenses = JSON.parse(savedExpenses);
-        updateExpenseList();
-        updateTotalExpenses();
-        updateCharts();
-    }
 }
 
 function saveBudget() {
     localStorage.setItem('budget', budget);
 }
 
-function loadBudget() {
-    const savedBudget = localStorage.getItem('budget');
-    if (savedBudget) {
-        budget = parseFloat(savedBudget);
-        updateBudgetInfo();
-    }
+function saveCategories() {
+    localStorage.setItem('categories', JSON.stringify(categories));
 }
 
-function loadRecurringExpenses() {
-    const savedRecurringExpenses = localStorage.getItem('recurringExpenses');
-    if (savedRecurringExpenses) {
-        recurringExpenses = JSON.parse(savedRecurringExpenses);
-        updateRecurringExpensesList();
-    }
+function saveCurrencyPreference() {
+    localStorage.setItem('selectedCurrency', selectedCurrency);
 }
 
-function loadCategories() {
-    const savedCategories = localStorage.getItem('categories');
-    if (savedCategories) {
-        categories = JSON.parse(savedCategories);
-        updateCategoryFilter();
-    }
+function loadFromLocalStorage() {
+    const storedExpenses = JSON.parse(localStorage.getItem('expenses')) || [];
+    const storedRecurringExpenses = JSON.parse(localStorage.getItem('recurringExpenses')) || [];
+    const storedBudget = parseFloat(localStorage.getItem('budget')) || 0;
+    const storedCategories = JSON.parse(localStorage.getItem('categories')) || categories;
+    const storedCurrency = localStorage.getItem('selectedCurrency') || 'INR';
+
+    expenses = storedExpenses;
+    recurringExpenses = storedRecurringExpenses;
+    budget = storedBudget;
+    categories = storedCategories;
+    selectedCurrency = storedCurrency;
+
+    currencySelect.value = selectedCurrency;
+    updateExpenseList();
+    updateTotalExpenses();
+    updateRecurringExpensesList();
+    updateBudgetInfo();
+    updateCategoryList();
+    updateCategoryFilterOptions();
+    applyRecurringExpenses();
+    updateCharts();
 }
 
 backupBtn.addEventListener('click', function() {
     const data = {
         expenses,
-        budget,
         recurringExpenses,
-        categories
+        budget,
+        categories,
+        selectedCurrency
     };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    const dataStr = JSON.stringify(data);
+    const encodedUri = encodeURI("data:text/json;charset=utf-8," + dataStr);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "budget_backup.json");
+    document.body.appendChild(link);
+    link.click();
 });
 
 restoreInput.addEventListener('change', function(event) {
@@ -365,33 +412,21 @@ restoreInput.addEventListener('change', function(event) {
         reader.onload = function(e) {
             const data = JSON.parse(e.target.result);
             expenses = data.expenses || [];
-            budget = data.budget || 0;
             recurringExpenses = data.recurringExpenses || [];
-            categories = data.categories || [];
-            updateExpenseList();
-            updateTotalExpenses();
-            updateCharts();
-            updateBudgetInfo();
-            updateRecurringExpensesList();
-            updateCategoryFilter();
+            budget = data.budget || 0;
+            categories = data.categories || categories;
+            selectedCurrency = data.selectedCurrency || 'INR';
+
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            localStorage.setItem('recurringExpenses', JSON.stringify(recurringExpenses));
+            localStorage.setItem('budget', budget);
+            localStorage.setItem('categories', JSON.stringify(categories));
+            localStorage.setItem('selectedCurrency', selectedCurrency);
+
+            loadFromLocalStorage();
         };
         reader.readAsText(file);
     }
 });
 
-currencySelect.addEventListener('change', function() {
-    selectedCurrency = currencySelect.value;
-    updateExpenseList();
-    updateTotalExpenses();
-    updateBudgetInfo();
-    updateCharts();
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    loadExpenses();
-    loadBudget();
-    loadRecurringExpenses();
-    loadCategories();
-    updateCategoryFilter();
-    applyRecurringExpenses();
-});
+window.addEventListener('load', loadFromLocalStorage);
