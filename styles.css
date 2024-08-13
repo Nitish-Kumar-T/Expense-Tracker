@@ -1,83 +1,3 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    padding: 20px;
-    background-color: #f4f4f4;
-}
-
-header {
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 1rem;
-    margin-bottom: 2rem;
-}
-
-h1 {
-    margin-bottom: 0.5rem;
-}
-
-main {
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: #fff;
-    padding: 2rem;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-    max-width: 400px;
-    margin: 0 auto 2rem;
-}
-
-input, select, button {
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    font-size: 1rem;
-}
-
-button {
-    background-color: #333;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-button:hover {
-    background-color: #555;
-}
-
-#filterOptions {
-    margin-bottom: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-#expenseList {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.expense-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ccc;
-    padding: 1rem 0;
-}
-
 .category-label {
     padding: 0.25rem 0.5rem;
     border-radius: 3px;
@@ -92,19 +12,27 @@ button:hover {
 .category-entertainment { background-color: #ffa07a; }
 .category-other { background-color: #d3d3d3; }
 
-#charts {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 2rem;
+#expenseList {
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-#categoryChart, #trendChart {
-    width: 48%;
-    height: 300px;
+.budget-progress {
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
 }
 
-#exportBtn {
-    display: block;
-    margin: 2rem auto 0;
-    padding: 0.5rem 1rem;
+.budget-progress-bar {
+    height: 100%;
+    border-radius: 0.25rem;
+    transition: width 0.6s ease;
+}
+
+/* Addition: Styles for recurring expenses */
+.recurring-expense-item {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
 }
