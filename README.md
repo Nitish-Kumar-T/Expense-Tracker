@@ -5,8 +5,10 @@
 The Expense Tracker Web Application is a responsive, interactive, and easy-to-use platform designed to help users manage their personal finances. The application allows users to track expenses, set budgets, create financial goals, and visualize spending patterns. The application also supports various features like currency conversion, dark mode, recurring expenses, and exporting data.
 
 ## Demo
-  **Link**: 
-    
+  **Link**: https://nitish-kumar-t.github.io/Expense-Tracker/
+   ![Screenshot from 2024-08-17 08-00-26](https://github.com/user-attachments/assets/72dc1f8a-5d76-4abf-a7d7-1cb358b6651f)
+   ![image](https://github.com/user-attachments/assets/9b4ca739-529f-4ecd-bcd8-9a7adaeeb770)
+
 
 ## Features
 
